@@ -1,3 +1,5 @@
 export class UserDto {
-  // Add request fields and validation decorators here.
+  readonly name: string;
+  readonly email: string;
+  readonly password: string;
 }
