@@ -1,29 +1,170 @@
-import { Injectable } from '@nestjs/common';
-import { UserDto } from './dto/user.dto.js';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+  Res,
+  Req,
+  UnauthorizedException,
+} from '@nestjs/common';
+
 import { InjectModel } from '@nestjs/mongoose';
+import { User, UserDocument } from './schemas/user.schema.js';
+import { UserDto } from './dto/user.dto.js';
+import { CreateUserDto } from './dto/create-user.dto.js';
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
+import * as bcrypt from 'bcrypt';
+import { UpdateUserDto } from './dto/update-user.dto.js';
 
 @Injectable()
 export class UserService {
-  constructor(@InjectModel('User') private readonly userModel: any) {}
+  constructor(
+    @InjectModel(User.name)
+    private readonly userModel: any,
+    private jwtService: JwtService,
+    private readonly configService: ConfigService,
+  ) {}
 
-  async createUser(userDto: UserDto) {
-    const createdUser = new this.userModel(userDto);
-    return createdUser.save();
+  async findByEmail(email: string) {
+    return this.userModel
+      .findOne({ email: email.trim().toLowerCase() })
+      .select('+password')
+      .exec();
   }
 
+  async login(email: string, password: string) {
+    const user = await this.findByEmail(email);
+
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const token = await this.jwtService.signAsync(
+      {
+        sub: user._id.toString(),
+        email: user.email,
+      },
+      {
+        secret: this.configService.getOrThrow<string>('JWT_SECRET'),
+        expiresIn: '1d',
+      },
+    );
+
+    return {
+      access_token: token,
+    };
+  }
+
+  // CREATE
+  async createUser(createUserDto: CreateUserDto) {
+    const email = createUserDto.email.trim().toLowerCase();
+
+    const existingUser = await this.userModel.findOne({ email });
+
+    if (existingUser) {
+      throw new ConflictException('Email already exists');
+    }
+
+    const hashedPassword = await bcrypt.hash(createUserDto.password, 12);
+
+    const createdUser = new this.userModel({
+      ...createUserDto,
+      email,
+      password: hashedPassword,
+      role: createUserDto.role ?? 'user',
+      active: createUserDto.active ?? true,
+    });
+
+    try {
+      await createdUser.save();
+    } catch (error: any) {
+      if (error.code === 11000) {
+        throw new ConflictException('Email already exists');
+      }
+      throw error;
+    }
+
+    const user = createdUser.toObject();
+    delete user.password;
+
+    return user;
+  }
+
+  // READ ALL
   async getAllUsers() {
     return this.userModel.find().exec();
   }
 
+  // READ ONE
   async getUserById(id: string) {
-    return this.userModel.findById(id).exec();
+    const user = await this.userModel.findById(id).exec();
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return user;
   }
 
-  async updateUser(id: string, userDto: UserDto) {
-    return this.userModel.findByIdAndUpdate(id, userDto, { new: true }).exec();
+  // UPDATE
+  async updateUser(id: string, dto: UpdateUserDto) {
+    const existingUser = await this.userModel.findById(id).exec();
+
+    if (!existingUser) {
+      throw new NotFoundException('User not found');
+    }
+
+    const updateData: any = { ...dto };
+
+    if (dto.email) {
+      const email = dto.email.trim().toLowerCase();
+      const duplicateUser = await this.userModel
+        .findOne({ email, _id: { $ne: id } })
+        .exec();
+
+      if (duplicateUser) {
+        throw new ConflictException('Email already exists');
+      }
+
+      updateData.email = email;
+    }
+
+    if (dto.password) {
+      updateData.password = await bcrypt.hash(dto.password, 12);
+    }
+
+    const user = await this.userModel
+      .findByIdAndUpdate(id, updateData, {
+        new: true,
+        runValidators: true,
+      })
+      .select('-password')
+      .exec();
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return user;
   }
 
+  // DELETE
   async deleteUser(id: string) {
-    return this.userModel.findByIdAndDelete(id).exec();
+    const user = await this.userModel.findByIdAndDelete(id).exec();
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return {
+      message: 'User deleted successfully',
+      user,
+    };
   }
 }

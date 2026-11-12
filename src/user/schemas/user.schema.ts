@@ -5,60 +5,60 @@ export type UserDocument = HydratedDocument<User>;
 
 @Schema({ timestamps: true })
 export class User {
-  // Name
-  @Prop({ required: true, minlength: 3, maxlength: 30 })
+  @Prop({
+    required: true,
+    minlength: 3,
+    maxlength: 30,
+    trim: true,
+  })
   name: string;
 
-  // Email
   @Prop({
     required: true,
     unique: true,
-    min: [2, 'Email must be at least 3 characters long'],
-    max: [30, 'Email must be at most 30 characters long'],
+    lowercase: true,
+    trim: true,
+    minlength: 3,
+    maxlength: 30,
   })
   email: string;
 
-  // Password
   @Prop({
     required: true,
-    min: [6, 'Password must be at least 6 characters long'],
-    max: [30, 'Password must be at most 30 characters long'],
+    minlength: 6,
+    maxlength:100,
+    select: false,
   })
   password: string;
 
-  // Role
-  @Prop({ type: String, enum: ['User', 'Admin'], default: 'User' })
+  @Prop({
+    type: String,
+    enum: ['user', 'admin'],
+    default: 'user',
+  })
   role: string;
 
-  // Avatar
   @Prop({ type: String })
   avatar?: string;
 
-  // Age
-  @Prop({ type: Number })
+  @Prop({ type: Number, min: 1, max: 120 })
   age?: number;
 
-  // Phone Number
   @Prop({ type: String })
   phoneNumber?: string;
 
-  // Address
   @Prop({ type: String })
   address?: string;
 
-  // Active
   @Prop({ type: Boolean, default: true })
   active: boolean;
 
-  // Verification Code
   @Prop({ type: String })
   verificationCode?: string;
 
-  // Gender
   @Prop({
     type: String,
     enum: ['male', 'female'],
-    required: false,
   })
   gender?: string;
 }
