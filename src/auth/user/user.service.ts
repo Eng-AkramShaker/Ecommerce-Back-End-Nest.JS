@@ -2,19 +2,17 @@ import {
   ConflictException,
   Injectable,
   NotFoundException,
-  Res,
-  Req,
   UnauthorizedException,
 } from '@nestjs/common';
 
 import { InjectModel } from '@nestjs/mongoose';
-import { User, UserDocument } from './schemas/user.schema.js';
-import { UserDto } from './dto/user.dto.js';
-import { CreateUserDto } from './dto/create-user.dto.js';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
+import { User } from './schemas/user.schema.js';
+import { CreateUserDto } from './dto/create-user.dto.js';
 import { UpdateUserDto } from './dto/update-user.dto.js';
+import { RestPasswordDto } from './dto/rest-password.dto.js';
 
 @Injectable()
 export class UserService {
@@ -97,8 +95,23 @@ export class UserService {
   }
 
   // READ ALL
-  async getAllUsers() {
-    return this.userModel.find().exec();
+  async getAllUsers(req: any) {
+    const { limit, skip, sort, name, email, role } = req.query;
+
+    return {
+      status: 200,
+      message: 'Users retrieved successfully',
+      data: await this.userModel
+        .find({
+          ...(name && { name: { $regex: name, $options: 'i' } }),
+          ...(email && { email: { $regex: email, $options: 'i' } }),
+          ...(role && { role: { $regex: role, $options: 'i' } }),
+        })
+        .skip(skip)
+        .limit(limit)
+        .sort(sort)
+        .exec(),
+    };
   }
 
   // READ ONE
@@ -152,6 +165,22 @@ export class UserService {
     }
 
     return user;
+  }
+
+  // Reset Password
+  async resetPassword(email: RestPasswordDto) {
+    const user = await this.userModel.findOne({ email: email.email }).exec();
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // user.verificationCode = code;
+    // await user.save();
+
+    return code;
   }
 
   // DELETE

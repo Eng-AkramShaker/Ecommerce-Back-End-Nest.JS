@@ -2,8 +2,8 @@ import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { MongooseModule } from '@nestjs/mongoose';
 import { createObserveModule } from '@nestjs/observe';
-import { UserModule } from './user/user.module.js';
 import { ConfigModule } from '@nestjs/config';
+import { UserModule } from './auth/user/user.module.js';
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
 @Module({

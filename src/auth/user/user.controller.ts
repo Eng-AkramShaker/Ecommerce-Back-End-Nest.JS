@@ -6,15 +6,16 @@ import {
   Param,
   Post,
   Put,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 
 import { UserService } from './user.service.js';
-import { UserDto } from './dto/user.dto.js';
 import { CreateUserDto } from './dto/create-user.dto.js';
 import { AuthGuard } from '../guard/auth.guard.js';
+import { RestPasswordDto } from './dto/rest-password.dto.js';
 import { UpdateUserDto } from './dto/update-user.dto.js';
-
+ 
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
@@ -34,8 +35,8 @@ export class UserController {
   // Get all users
   @Get()
   @UseGuards(AuthGuard)
-  async getAllUsers() {
-    return this.userService.getAllUsers();
+  async getAllUsers(@Req() req: any) {
+    return this.userService.getAllUsers(req);
   }
 
   // Get user by ID
@@ -50,6 +51,12 @@ export class UserController {
   @UseGuards(AuthGuard)
   async updateUser(@Param('id') id: string, @Body() dto: UpdateUserDto) {
     return this.userService.updateUser(id, dto);
+  }
+
+  // Reset password
+  @Post('reset-password')
+  async resetPassword(@Body() email: RestPasswordDto) {
+    return this.userService.resetPassword(email);
   }
 
   // Delete user
