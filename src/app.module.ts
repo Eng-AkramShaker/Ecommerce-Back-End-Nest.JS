@@ -6,6 +6,9 @@ import { ConfigModule } from '@nestjs/config';
 import { UserModule } from './auth/user/user.module.js';
 import { CategoryModule } from './category/category.module.js';
 import { SubCategoryModule } from './sub-category/sub-category.module.js';
+import { BrandModule } from './brand/brand.module.js';
+import { CouponModule } from './coupon/coupon.module.js';
+import { SuppliersModule } from './suppliers/suppliers.module.js';
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
 @Module({
@@ -27,7 +30,10 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
     // Category
     CategoryModule,
-    SubCategoryModule,],
+    SubCategoryModule,
+    BrandModule,
+    CouponModule,
+    SuppliersModule,],
 
   controllers: [],
   providers: [],
