@@ -47,6 +47,7 @@ export class UserService {
       {
         sub: user._id.toString(),
         email: user.email,
+        role: user.role,
       },
       {
         secret: this.configService.getOrThrow<string>('JWT_SECRET'),
