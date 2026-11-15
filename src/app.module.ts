@@ -9,6 +9,7 @@ import { SubCategoryModule } from './sub-category/sub-category.module.js';
 import { BrandModule } from './brand/brand.module.js';
 import { CouponModule } from './coupon/coupon.module.js';
 import { SuppliersModule } from './suppliers/suppliers.module.js';
+import { RequestProductModule } from './request-product/request-product.module.js';
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
 @Module({
@@ -33,7 +34,8 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     SubCategoryModule,
     BrandModule,
     CouponModule,
-    SuppliersModule,],
+    SuppliersModule,
+    RequestProductModule,],
 
   controllers: [],
   providers: [],
